@@ -14,7 +14,15 @@ app.use(cors({
 }));
 app.use(express.static("public"));
 
+// Import all routes
 
+
+import userRouter from "./routers/user.routes.js"
+
+
+//Declaration of routes
+
+app.use("/api/v1/user",userRouter);
 
 // app.get("/mobile", (req, res) => {
 //   res.json([
