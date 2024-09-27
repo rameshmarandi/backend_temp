@@ -5,6 +5,7 @@ const storage = multer.diskStorage({
     cb(null, "./public/temp");
   },
   filename: function (req, file, cb) {
+    console.log("at_Multer" , file)
     cb(null, file.originalname);
   },
 });
