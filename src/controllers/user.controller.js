@@ -4,6 +4,26 @@ import { User } from "../models/user.modle.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessTokenAndRefreshToken = async (userID) => {
+  try {
+    const user = await User.findById(userID);
+
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({
+      validateBeforeSave: false, // Don't validate the model before saving
+    });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access token and refresh token"
+    );
+  }
+};
 const registerUser = asyncHandler(async (req, res) => {
   //    All steps
   // Check all fields from frontend
@@ -83,4 +103,92 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  //    All steps
+  // Accept all the fields from frontend
+  // Check user is exists by email & username in DB
+  // Check password is correct
+  // generate the access token and refresh token
+  // send secure cookies
+
+  const { email, username, password } = req.body;
+
+  if (email == "" || username == "") {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const user = await User.findOne({
+    $or: [
+      {
+        email,
+      },
+      {
+        username,
+      },
+    ],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invlaid cradentials");
+  }
+
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user._id);
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options) // For website we are send the cookies to the frontend
+    .cookie("refreshToken", refreshToken, options) // For website we are send the cookies to the frontend
+    .json( // WE are sending the json for the Mobile app, because there is not cookies functionlaty in the frontend
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "Login successfully"
+      )
+    );
+});
+
+const userLogout = asyncHandler(async (req, res) => {
+
+  try {
+    const user = await User.findByIdAndUpdate(req.user._id, {
+      refreshToken:undefined,
+    }, {
+      new : true
+    })
+  
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+  
+  
+    return res.status(200)
+    .clearCookie("accessToken" , options)
+    .clearCookie("refreshToken" , options)
+    .json(new ApiResponse(200, {}, "Logout successfully"))
+    
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while logging out")
+  }
+})
+export { registerUser, loginUser , userLogout };
