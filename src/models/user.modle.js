@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
 
 const userSchema = new Schema(
   {
@@ -60,29 +61,38 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = function () {
-  jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-      fullName: this.fullName,
-      username: this.username,
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    }
-  );
+userSchema.methods.generateAccessToken = async function () {
+
+ try {
+    return jwt.sign(
+     {
+       _id: this._id,
+       email: this.email,
+       fullName: this.fullName,
+       username: this.username,
+     },
+     process.env.ACCESS_TOKEN_SECRET,
+     {
+       expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+     }
+   );
+ } catch (error) {
+  throw new ApiError(500, "Something went wrong while generating access token in userSchema file");
+ }
 };
-userSchema.methods.generateRefreshToken = function () {
-  jwt.sign(
-    {
-      _id: this._id,
-    },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-    }
-  );
+userSchema.methods.generateRefreshToken = async function () {
+  try {
+     return jwt.sign(
+      {
+        _id: this._id,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+      }
+    );
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while generating refresh token in userSchema file");
+  }
 };
 export const User = mongoose.model("User", userSchema);
