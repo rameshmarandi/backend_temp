@@ -313,10 +313,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
       new: true,
     }
   ).select("-password");
-  
+
   return res
     .status(200)
-    .json(new ApiResponse(200,user, "Avatar updated successfully"));
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
 const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImageLocalPath = req.file?.path;
@@ -341,12 +341,28 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
       new: true,
     }
   ).select("-password");
-  
+
   return res
     .status(200)
-    .json(new ApiResponse(200,user, "Avatar updated successfully"));
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
 
+const testRouter = asyncHandler(async (req, res) => {
+  return res.status(200).json([
+    {
+      userId: 1,
+      id: 3,
+      title: "RAmesh",
+      body: "et iusto sed quo iure\nvoluptatem occaecati omnis eligendi aut ad\nvoluptatem doloribus vel accusantium quis pariatur\nmolestiae porro eius odio et labore et velit aut",
+    },
+    {
+      userId: 1,
+      id: 4,
+      title: "sunita",
+      body: "ullam et saepe reiciendis voluptatem adipisci\nsit amet autem assumenda provident rerum culpa\nquis hic commodi nesciunt rem tenetur doloremque ipsam iure\nquis sunt voluptatem rerum illo velit",
+    },
+  ]);
+});
 
 export {
   registerUser,
@@ -357,5 +373,6 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
-  updateUserCoverImage
+  testRouter,
+  updateUserCoverImage,
 };
